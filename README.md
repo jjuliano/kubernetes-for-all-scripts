@@ -82,14 +82,11 @@ setup.sh             Thin entry point: exec datacenter.sh --kind (Ch1)
 configuration.example
 kind-config.yaml     Kind cluster config used by start_env (Ch11)
 lib/                 Library files listed in Chapter 18
-chapter-06-terminal-colors-and-logging/lib/logging.sh
 k8s/                 Manifests, Helm charts, and docker_images.sh
 services/            Sample microservice source (see below)
 scripts/install_deps.sh
 external/            Docker Compose (Kafka + nginx) and nginx templates
 ```
-
-`chapter-06-terminal-colors-and-logging/lib/logging.sh` and `lib/logging.sh` are the same file.
 
 ### Sample services
 

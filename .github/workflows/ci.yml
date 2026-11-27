@@ -32,16 +32,14 @@ jobs:
         run: |
           set -euo pipefail
           for f in datacenter.sh setup.sh lib/*.sh k8s/docker_images.sh \
-                   k8s/bootstrapdb.sh k8s/load_sql.sh scripts/install_deps.sh \
-                   chapter-06-terminal-colors-and-logging/lib/logging.sh; do
+                   k8s/bootstrapdb.sh k8s/load_sql.sh scripts/install_deps.sh; do
             bash -n "$f"
           done
 
       - name: shellcheck
         run: |
           shellcheck -s bash datacenter.sh setup.sh lib/*.sh \
-            k8s/docker_images.sh scripts/install_deps.sh \
-            chapter-06-terminal-colors-and-logging/lib/logging.sh
+            k8s/docker_images.sh scripts/install_deps.sh
 
       - name: helm lint
         run: |
