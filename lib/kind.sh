@@ -54,3 +54,25 @@ delete_env() {
     script_exit "Operation not available on datacenter mode!" 2
   fi
 }
+
+# Retry kind load; large images can fail once with "content digest not found"
+# when loading onto multiple nodes.
+load_image_into_kind() {
+  local img="${1-}"
+  if [[ -z $img ]]; then
+    script_exit "Missing required argument to load_image_into_kind()!" 2
+  fi
+  if [[ -n ${dry_run-} ]]; then
+    log "DRY-RUN: kind load docker-image $img" "$fg_yellow"
+    return 0
+  fi
+  local attempt
+  for attempt in 1 2 3; do
+    if kind load docker-image "$img"; then
+      return 0
+    fi
+    log "kind load of $img failed (attempt ${attempt}); retrying" "$fg_yellow"
+    sleep 2
+  done
+  script_exit "Failed to load image into Kind: $img" 1
+}

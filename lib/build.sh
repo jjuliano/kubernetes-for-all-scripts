@@ -35,6 +35,10 @@ build_service() {
         safe_docker_tag "${TAG-}" \
           "registry-service:5000/myapp/${SERVICE-}:built"
         safe_docker_push "${TAG-}"
+        # Helm charts pull by the in-cluster DNS name (Chapter 15).
+        if is_kind; then
+          load_image_into_kind "registry-service:5000/myapp/${SERVICE-}:latest"
+        fi
 
         log "Docker: Service ${SERVICE-} successfully built ..."
       fi

@@ -38,10 +38,18 @@ pull_images() {
   fi
 
   # Kind nodes do not see host images until they are loaded (Chapter 11).
+  # Only load images that actually run in the cluster. golang/node/kafka are
+  # used on the host (install_deps, build_bff, Compose).
   if is_kind; then
+    local kind_images=(
+      "postgres:16"
+      "registry:2"
+      "nginx:latest"
+      "traefik:v3.3"
+    )
     local img
-    for img in "${images[@]}"; do
-      run_cmd kind load docker-image "$img"
+    for img in "${kind_images[@]}"; do
+      load_image_into_kind "$img"
     done
   fi
 }

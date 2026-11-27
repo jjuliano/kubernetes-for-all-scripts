@@ -82,7 +82,7 @@ safe_docker_tag() {
 safe_docker_push() {
   if is_kind; then
     # Load directly into Kind nodes — no registry needed
-    run_cmd kind load docker-image "${@-}"
+    load_image_into_kind "${1-}"
   else
     safe_docker push "${@-}"
   fi
