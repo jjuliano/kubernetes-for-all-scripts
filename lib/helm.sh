@@ -23,6 +23,12 @@ safe_helm() {
       kubectl get pods,deploy,svc -A || true
       kubectl describe pods -n myapp || true
       kubectl get events -A --sort-by=.lastTimestamp | tail -50 || true
+      if is_kind && command -v kind >/dev/null 2>&1; then
+        for _node in $(kind get nodes 2>/dev/null); do
+          log "Images on ${_node}:"
+          docker exec "$_node" ctr --namespace=k8s.io images ls || true
+        done
+      fi
       return 1
     fi
 }

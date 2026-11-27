@@ -32,7 +32,7 @@ reload_all_kubernetes() {
   cleanup_core_package_data
   install_deps all
 
-  build_backend_services backend guardian
+  build_backend_services backend guardian conductor
   build_runtime_components seeder logger registry pds
   build_runtime_modules scanner cache frontier bridge
   build_router

@@ -137,7 +137,8 @@ setup_k8s() {
   configure_registry
 
   build_router
-  build_backend_services backend guardian
+  # conductor is installed by helm_install_service later and needs a local image.
+  build_backend_services backend guardian conductor
   build_runtime_components seeder logger registry pds
   build_runtime_modules scanner cache frontier bridge
   # Core services are installed from the core-service chart and need images too.
