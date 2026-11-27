@@ -25,7 +25,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?", 1)[0]
         if path in ("/", "/health", "/healthz", "/ready"):
-            self._send(200, {{"service": NAME, "status": "ok", "path": path}})
+            self._send(200, {"service": NAME, "status": "ok", "path": path})
         elif path == "/metrics":
             self._send(
                 200,
@@ -33,12 +33,12 @@ class Handler(BaseHTTPRequestHandler):
                 "text/plain; version=0.0.4",
             )
         else:
-            self._send(404, {{"error": "not found", "service": NAME}})
+            self._send(404, {"error": "not found", "service": NAME})
 
     def log_message(self, fmt, *args):
         print(NAME + ": " + (fmt % args), flush=True)
 
 
 if __name__ == "__main__":
-    print(f"Starting {{NAME}} on 0.0.0.0:{{PORT}}", flush=True)
+    print(f"Starting {NAME} on 0.0.0.0:{PORT}", flush=True)
     HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

@@ -52,6 +52,11 @@ jobs:
             helm lint "$chart"
           done
 
+      - name: python compile sample services
+        run: |
+          set -euo pipefail
+          find services -name main.py -print0 | xargs -0 python3 -m py_compile
+
       - name: kubeconform
         run: |
           set -euo pipefail
