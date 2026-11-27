@@ -45,16 +45,20 @@ safe_docker_build() {
 
 safe_docker_run() {
   if is_kind; then
-    check_directories "/services/" "/services/webapp/" "/scripts/" && \
-      check_files "/scripts/install_deps.sh" && \
+    # The book bind-mounts /services and /scripts (paths inside the Kind
+    # node). On the host, mount this checkout at those same container paths.
+    check_directories "$(get_repos_dir)/" "$(get_repos_dir)/webapp/" \
+      "${orig_cwd-}/scripts/" && \
+      check_files "${orig_cwd-}/scripts/install_deps.sh" && \
       safe_docker run --rm \
-      -v /services/:/go/src/github.com/myapp-dev/ \
-      -v /data/go/:/go/ \
-      -v /scripts/:/scripts/ \
-      -v /services/webapp/:/webapp/ \
+      -v "$(get_repos_dir)/":/go/src/github.com/myapp-dev/ \
+      -v "${orig_cwd-}/data/go/":/go/ \
+      -v "${orig_cwd-}/scripts/":/scripts/ \
+      -v "$(get_repos_dir)/webapp/":/webapp/ \
       -v /etc/hosts:/hosts \
-      -v /scripts/install_deps.sh:/install_deps.sh \
-      -e "GITHUB_TOKEN=${GITHUB_TOKEN-}" "${@-}"
+      -v "${orig_cwd-}/scripts/install_deps.sh":/install_deps.sh \
+      -e "GITHUB_TOKEN=${GITHUB_TOKEN-}" \
+      -e "REPOS_DIR=/go/src/github.com/myapp-dev" "${@-}"
   else
     check_directories "$(get_repos_dir)/" "${orig_cwd-}/services/webapp/" \
       "${orig_cwd-}/scripts/" && \
@@ -66,7 +70,8 @@ safe_docker_run() {
       -v "${orig_cwd-}/services/webapp/":/webapp/ \
       -v /etc/hosts:/hosts \
       -v "${orig_cwd-}/scripts/install_deps.sh":/install_deps.sh \
-      -e "GITHUB_TOKEN=${GITHUB_TOKEN-}" "${@-}"
+      -e "GITHUB_TOKEN=${GITHUB_TOKEN-}" \
+      -e "REPOS_DIR=/go/src/github.com/myapp-dev" "${@-}"
   fi
 }
 

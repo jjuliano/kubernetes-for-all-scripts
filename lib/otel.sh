@@ -67,10 +67,41 @@ otel_apply_collector() {
 
 # Not printed as a complete function in the book. Ch18 says otel_init
 # dispatches OpenTelemetry operations following the same pattern.
+otel_apply_instrumentation() {
+  local MANIFEST="${1:-${orig_cwd-}/k8s/otel-instrumentation.yaml}"
+
+  if [[ ! -f ${MANIFEST} ]]; then
+    log "OTel: no Instrumentation at ${MANIFEST}; skipping" "$fg_yellow"
+    return 0
+  fi
+
+  log "OTel: Applying Instrumentation from ${MANIFEST} ..."
+  check_files "${MANIFEST}" && \
+    safe_kubectl apply -f "${MANIFEST}"
+}
+
+helm_install_tempo() {
+  log "OTel: Installing Grafana Tempo ..." "$ta_bold$fg_blue"
+
+  local cmd_args=()
+  cmd_args+=(upgrade --install tempo)
+  cmd_args+=(--repo https://grafana.github.io/helm-charts)
+  cmd_args+=(--namespace monitoring)
+  cmd_args+=(--create-namespace)
+  cmd_args+=(--set "traces.otlp.grpc.enabled=true")
+  cmd_args+=(--wait)
+  cmd_args+=(tempo)
+
+  safe_helm "${cmd_args[@]}"
+}
+
 otel_init() {
   if [[ -n ${install_otel-} ]]; then
     helm_install_otel_operator
     otel_wait_ready
+    # Tempo is the trace backend the collector exports to (Chapter 21).
+    helm_install_tempo
     otel_apply_collector
+    otel_apply_instrumentation
   fi
 }

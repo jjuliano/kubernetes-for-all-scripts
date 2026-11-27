@@ -41,8 +41,13 @@ helm_install_service() {
     cmd_args+=(--namespace "$namespace")
     cmd_args+=(--wait)
 
-    [[ -d "${orig_cwd-}/k8s/${name-}" ]] \
-      && cmd_args+=("${orig_cwd-}/k8s/${name-}")
+    if [[ -d "${orig_cwd-}/k8s/${name-}" ]]; then
+      cmd_args+=("${orig_cwd-}/k8s/${name-}")
+    else
+      # Values files such as conductor-values.yaml override the generic
+      # core-service chart (Chapter 14).
+      cmd_args+=("${orig_cwd-}/k8s/core-service")
+    fi
 
     safe_helm "${cmd_args[@]}"
   done
@@ -119,6 +124,7 @@ helm_install_traefik_service() {
   local cmd_args=()
   cmd_args+=(upgrade --install traefik)
   cmd_args+=(--namespace kube-system)
+  cmd_args+=(--wait)
   cmd_args+=("${orig_cwd-}/k8s/traefik")
 
   check_directories "${orig_cwd-}/k8s/traefik" && \
@@ -129,7 +135,7 @@ helm_install_volume() {
   log "Helm: Installing volume ..." "$ta_bold$fg_blue"
 
   check_directories "${orig_cwd-}/k8s/local-env-volumes" && \
-    safe_helm install local-env-volumes \
+    safe_helm upgrade --install local-env-volumes \
     --namespace myapp "${orig_cwd-}/k8s/local-env-volumes"
 }
 
@@ -137,7 +143,7 @@ helm_install_webapp_service() {
   log "Helm: Installing webapp ..." "$ta_bold$fg_blue"
 
   check_directories "${orig_cwd-}/k8s/webapp" && \
-    safe_helm install webapp \
+    safe_helm upgrade --install webapp \
     --set "kubeapi=https://${KUBEAPI_SERVER_IP-}:6443/" \
     --namespace myapp --wait "${orig_cwd-}/k8s/webapp"
 }
@@ -180,8 +186,11 @@ helm_update_service() {
     cmd_args+=(--namespace "$namespace")
     cmd_args+=(--wait)
 
-    [[ -d "${orig_cwd-}/k8s/${name-}" ]] \
-      && cmd_args+=("${orig_cwd-}/k8s/${name-}")
+    if [[ -d "${orig_cwd-}/k8s/${name-}" ]]; then
+      cmd_args+=("${orig_cwd-}/k8s/${name-}")
+    else
+      cmd_args+=("${orig_cwd-}/k8s/core-service")
+    fi
 
     safe_helm "${cmd_args[@]}"
   done

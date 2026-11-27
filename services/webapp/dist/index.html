@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Kubernetes for All — webapp</title>
+  <style>
+    body { font-family: sans-serif; max-width: 40rem; margin: 3rem auto; }
+  </style>
+</head>
+<body>
+  <h1>Kubernetes for All</h1>
+  <p>Sample webapp for the companion scripts.</p>
+  <p>API: <code id="api">loading…</code></p>
+  <script src="config.js"></script>
+  <script>
+    document.getElementById("api").textContent = window.API_URL || "(unset)";
+  </script>
+</body>
+</html>

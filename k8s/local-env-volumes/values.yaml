@@ -1,0 +1,3 @@
+size: 2Gi
+hostPath: /var/local/myapp-data
+storageClassName: local-storage

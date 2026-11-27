@@ -5,3 +5,8 @@ configuration
 *.lock
 *.swp
 .DS_Store
+
+# Go / build cache (Chapter 17)
+data/
+__pycache__/
+*.pyc

@@ -60,6 +60,10 @@ reload_kubernetes_init() {
 systemctl_reload_kubernetes() {
   log "Systemctl: reloading kubernetes systemd service ..." "$ta_bold$fg_blue"
 
+  if is_kind; then
+    log "Kind mode: kubelet runs inside the Kind node; skipping host systemctl" "$fg_yellow"
+    return 0
+  fi
   if [[ -n ${dry_run-} ]]; then
     log "DRY-RUN: systemctl restart kubelet.service" "$fg_yellow"
     return 0

@@ -55,8 +55,7 @@ build_runtime_components() {
   log "Docker: Building runtime components ..." "$ta_bold$fg_blue"
 
   for service in "${@-}"; do
-    build_service "${service-}" "$(get_repos_dir)/runtime-components/${service-
-      }"
+    build_service "${service-}" "$(get_repos_dir)/runtime-components/${service-}"
   done
 }
 
@@ -113,9 +112,29 @@ build_router() {
 
   if check_directories "$(get_repos_dir)/router"; then
     safe_docker_build -t myapplocal/router "$(get_repos_dir)/router"
+    safe_docker_tag myapplocal/router "registry-service:5000/myapp/router:latest"
+    # Kind cannot pull myapplocal/router unless it is loaded (Chapter 11).
+    safe_docker_push myapplocal/router
     kubectl_restart router:myapp
     helm_install_service router:myapp
     kubectl_restart router:myapp
+  fi
+}
+
+# The book builds the frontend with safe_docker_run (build_bff) but does not
+# print a container image step. Package the result so helm_install_webapp_service
+# has an image to deploy.
+build_webapp_image() {
+  log "Docker: Building webapp image ..." "$ta_bold$fg_blue"
+  local webapp_dir
+  webapp_dir="$(get_repos_dir)/webapp"
+  if check_directories "$webapp_dir"; then
+    # dist/ is produced by build_bff; fall back to public/ if needed.
+    if [[ ! -d "${webapp_dir}/dist" && -d "${webapp_dir}/public" ]]; then
+      mkdir -p "${webapp_dir}/dist"
+      cp -a "${webapp_dir}/public/." "${webapp_dir}/dist/"
+    fi
+    build_service webapp "$webapp_dir"
   fi
 }
 

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-service
+  namespace: myapp
+  labels:
+    app: registry
+    app.kubernetes.io/part-of: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+        app.kubernetes.io/part-of: myapp
+    spec:
+      containers:
+      - name: registry
+        image: registry:2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: http
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+      volumes:
+      - name: registry-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-service
+  namespace: myapp
+  labels:
+    app: registry
+    app.kubernetes.io/part-of: myapp
+spec:
+  type: ClusterIP
+  selector:
+    app: registry
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000

@@ -1,0 +1,5 @@
+map:
+  token: ""
+  k8s_api_url: ""
+  guardian_url: ""
+  kafka_brokers: ""

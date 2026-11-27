@@ -1,0 +1,19 @@
+# k8s/myapp-servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: myapp-services
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: myapp
+  namespaceSelector:
+    matchNames:
+      - myapp
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

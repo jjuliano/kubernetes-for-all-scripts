@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "core-service.name" . }}
+  labels:
+    app: {{ include "core-service.name" . }}
+    app.kubernetes.io/name: {{ include "core-service.name" . }}
+    app.kubernetes.io/part-of: myapp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "core-service.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "core-service.name" . }}
+        app.kubernetes.io/name: {{ include "core-service.name" . }}
+        app.kubernetes.io/part-of: myapp
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ include "core-service.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+          env:
+            - name: SERVICE_NAME
+              value: {{ include "core-service.name" . | quote }}
+            - name: PORT
+              value: {{ .Values.containerPort | quote }}
+{{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+{{- end }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

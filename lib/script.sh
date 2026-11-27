@@ -21,11 +21,18 @@ check_binary() {
 }
 
 check_required_binaries() {
-  readonly required_binaries=(docker helm kubectl sed ip systemctl git)
+  readonly required_binaries=(docker helm kubectl sed git)
 
   for bin in "${required_binaries[@]-}"; do
     check_binary "${bin-}"
   done
+
+  # systemctl/ip are used in datacenter mode (host kubelet, eth0). Kind
+  # runs kubelet inside the node and gets the API IP from kubectl.
+  if ! is_kind; then
+    check_binary ip
+    check_binary systemctl
+  fi
 
   is_kind && check_binary kind
 

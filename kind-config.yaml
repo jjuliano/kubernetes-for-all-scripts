@@ -1,10 +1,21 @@
-# Minimal Kind cluster config referenced by start_env (Chapter 11).
-# The book does not print a complete kind-config.yaml; this is a
-# small three-node layout matching the kind-control-plane / kind-worker
-# / kind-worker2 names used in stop_env.
+# Chapter 11 — Kind cluster topology.
+# start_env rewrites relative hostPath values to absolute paths so Kind
+# (which requires absolute hostPath) can mount this checkout.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
-  - role: control-plane
-  - role: worker
-  - role: worker
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 32001
+    hostPort: 32001
+    protocol: TCP
+  - containerPort: 32080
+    hostPort: 32080
+    protocol: TCP
+  extraMounts:
+  - hostPath: ./services
+    containerPath: /services
+  - hostPath: ./scripts
+    containerPath: /scripts
+- role: worker
+- role: worker

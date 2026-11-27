@@ -1,0 +1,9 @@
+replicaCount: 1
+image:
+  repository: registry-service:5000/myapp/webapp
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+kubeapi: ""

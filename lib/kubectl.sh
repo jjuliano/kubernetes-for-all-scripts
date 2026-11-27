@@ -60,6 +60,9 @@ kubectl_create_db_bootstrap_file() {
 kubectl_install_database() {
   log "Kubectl: Installing postgres ..." "$ta_bold$fg_blue"
 
+  # The printed postgres.yaml references secret/db-auth. Ensure it exists.
+  kubectl_install_resource_from_file k8s/db-auth.yaml
+
   kubectl_create_db_bootstrap_file
 
   kubectl_install_resource_from_file k8s/postgres.yaml
@@ -126,6 +129,15 @@ kubectl_restart() {
 
     log "Kubectl: Restarting deployment '${name-}' in namespace '${namespace-}' ..."
 
+    if [[ -n ${dry_run-} ]]; then
+      safe_kubectl rollout restart deployment "${name-}" -n "${namespace-}"
+      continue
+    fi
+    # First install builds images before the Helm releases exist.
+    if ! kubectl get deployment "${name-}" -n "${namespace-}" >/dev/null 2>&1; then
+      log "Kubectl: deployment '${name-}' not found in '${namespace-}'; skipping restart" "$fg_yellow"
+      continue
+    fi
     safe_kubectl rollout restart deployment "${name-}" -n "${namespace-}"
   done
 }

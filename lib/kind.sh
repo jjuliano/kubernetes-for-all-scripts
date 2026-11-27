@@ -12,7 +12,15 @@ start_env() {
       log "Kind cluster ready (dry-run)"
       return 0
     fi
-    kind create cluster --config "${orig_cwd-}/kind-config.yaml"
+    # Kind requires absolute hostPath. The book's kind-config.yaml uses
+    # ./services and ./scripts; rewrite them to this checkout.
+    local kind_cfg
+    kind_cfg="$(mktemp "${TMPDIR:-/tmp}/kind-config.XXXXXX.yaml")"
+    sed -e "s|hostPath: \./services|hostPath: ${orig_cwd-}/services|" \
+        -e "s|hostPath: \./scripts|hostPath: ${orig_cwd-}/scripts|" \
+        "${orig_cwd-}/kind-config.yaml" > "$kind_cfg"
+    kind create cluster --config "$kind_cfg"
+    rm -f "$kind_cfg"
     log "Kind cluster ready"
   else
     script_exit "Operation not available on datacenter mode!" 2

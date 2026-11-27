@@ -1,7 +1,11 @@
-# services/
+Sample microservice source for *Kubernetes for All*.
 
-Service source repositories live here (or, in Kind mode, the book uses
-`/services`). `check_repos` expects: backend, guardian, conductor, seeder,
-logger, registry, pds, scanner, cache, frontier, bridge, and (for the router
-build) router. The book treats these as git submodules; they are not bundled
-in this repository.
+Backend services (`backend`, `guardian`, `conductor`), `router`, `webapp`,
+and core services (`keymaster`, `datastore`, `migrator`, `herald`,
+`myapp-auth`) live at the top level. Runtime components and modules live
+under `runtime-components/` and `runtime-modules/`, with top-level
+symlinks so `check_repos` (Chapter 7) finds them.
+
+Each service is a small HTTP server with a Dockerfile. SQL used by
+Postgres bootstrap lives in `keymaster/resources/`, `datastore/resources/`,
+and `migrator/resources/`.

@@ -1,0 +1,8 @@
+image:
+  repository: traefik
+  tag: v3.3
+  pullPolicy: IfNotPresent
+service:
+  type: NodePort
+  httpPort: 80
+  httpNodePort: 32080

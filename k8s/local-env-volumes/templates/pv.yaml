@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-env-volume
+spec:
+  capacity:
+    storage: {{ .Values.size }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.storageClassName }}
+  hostPath:
+    path: {{ .Values.hostPath }}
+    type: DirectoryOrCreate

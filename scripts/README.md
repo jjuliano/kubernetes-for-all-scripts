@@ -1,1 +1,1 @@
-# Placeholder so this directory is tracked. Add helper scripts here as you follow the book (Chapter 18).
+Build and helper scripts used by `safe_docker_run` (Chapter 12 / 15).

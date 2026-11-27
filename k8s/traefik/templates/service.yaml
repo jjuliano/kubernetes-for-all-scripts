@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  labels:
+    app: traefik
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: traefik
+  ports:
+    - name: web
+      port: {{ .Values.service.httpPort }}
+      targetPort: web
+      {{- if .Values.service.httpNodePort }}
+      nodePort: {{ .Values.service.httpNodePort }}
+      {{- end }}

@@ -1,0 +1,12 @@
+name: myapp-auth
+replicaCount: 1
+image:
+  repository: registry-service:5000/myapp/myapp-auth
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+  nodePort: null
+containerPort: 8080
