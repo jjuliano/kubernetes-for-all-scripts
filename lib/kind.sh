@@ -55,8 +55,9 @@ delete_env() {
   fi
 }
 
-# Retry kind load; large images can fail once with "content digest not found"
-# when loading onto multiple nodes.
+# Load a host image into every Kind node. `kind load docker-image` passes
+# --all-platforms to ctr, which fails with "content digest not found" when
+# Docker has only the current platform of a multi-arch image.
 load_image_into_kind() {
   local img="${1-}"
   if [[ -z $img ]]; then
@@ -66,13 +67,26 @@ load_image_into_kind() {
     log "DRY-RUN: kind load docker-image $img" "$fg_yellow"
     return 0
   fi
-  local attempt
-  for attempt in 1 2 3; do
-    if kind load docker-image "$img"; then
-      return 0
-    fi
-    log "kind load of $img failed (attempt ${attempt}); retrying" "$fg_yellow"
-    sleep 2
+
+  local archive node attempt
+  archive="$(mktemp "${TMPDIR:-/tmp}/kind-image.XXXXXX.tar")"
+  docker save "$img" -o "$archive"
+
+  for node in $(kind get nodes); do
+    for attempt in 1 2 3; do
+      if docker exec -i "$node" ctr --namespace=k8s.io images import - < "$archive"; then
+        break
+      fi
+      if [[ $attempt -eq 3 ]]; then
+        rm -f "$archive"
+        script_exit "Failed to load image $img into Kind node $node" 1
+      fi
+      log "import of $img onto $node failed (attempt ${attempt}); retrying" "$fg_yellow"
+      sleep 2
+    done
   done
-  script_exit "Failed to load image into Kind: $img" 1
+
+  rm -f "$archive"
+  log "Loaded $img into Kind"
+  return 0
 }
