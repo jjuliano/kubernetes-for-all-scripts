@@ -333,6 +333,10 @@ init() {
   readonly script_params="$*"
   readonly ta_none="$(tput sgr0 2> /dev/null || true)"
 
+  # Colour vars are used by log() in get_kube_params / check_repos.
+  # main() also calls colour_init afterwards (idempotent).
+  colour_init
+
   # Book (Ch18) also calls the dispatcher functions from init(). main()
   # runs init() before parse_params, so those flags would still be unset.
   # Runtime checks and dispatchers run after parse_params instead (see

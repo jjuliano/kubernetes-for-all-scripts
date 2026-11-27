@@ -27,6 +27,13 @@ tput_or_ansi() {
 }
 
 colour_init() {
+  # Idempotent: init() needs colours before get_kube_params, and main()
+  # also calls colour_init (as in the book). Variables are readonly.
+  if [[ -n ${colour_init_done-} ]]; then
+    return 0
+  fi
+  colour_init_done=true
+
   if [[ -n ${no_colour-} || -n ${NO_COLOR-} ]] || ! [[ -t 1 ]]; then
     readonly ta_bold=""
     readonly ta_uscore=""
