@@ -1,0 +1,14 @@
+# Copy this file to "configuration" and fill in the values.
+# Do not commit "configuration" — it holds secrets (Chapter 8).
+#
+# github_user and github_token are used as build-args / environment
+# variables when building service images. docker_network_mode is one of:
+# host, bridge, overlay, macvlan, none.
+
+github_user=""
+github_token=""
+docker_network_mode="bridge"
+
+# Optional versions used by install_deps / pull_images when set.
+# GO_VERSION="1.22"
+# NODE_VERSION="20"

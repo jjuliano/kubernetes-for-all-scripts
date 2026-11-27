@@ -1,0 +1,19 @@
+# ShellCheck cannot follow the sourced lib/*.sh glob, so it reports
+# flags set in datacenter.sh as unused (SC2034) or unassigned in the
+# libraries (SC2154). Those variables are shared on purpose.
+disable=SC1090
+disable=SC1091
+disable=SC2034
+disable=SC2154
+# The book assigns in the same statement as local/readonly/export.
+disable=SC2155
+# Several book snippets intentionally leave word-splitting unquoted.
+disable=SC2086
+# Optional-argument helpers called from *_init with their defaults.
+disable=SC2119
+disable=SC2120
+# Book-style `[[ -n "$(echo ... | grep)" ]]` and `grep | wc -l`.
+disable=SC2143
+disable=SC2126
+# Interactive config prompts follow the book (`read` without -r).
+disable=SC2162

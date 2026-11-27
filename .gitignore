@@ -1,0 +1,7 @@
+# User secrets (Chapter 8)
+configuration
+
+# Runtime
+*.lock
+*.swp
+.DS_Store

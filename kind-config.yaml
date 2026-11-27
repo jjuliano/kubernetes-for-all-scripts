@@ -1,0 +1,10 @@
+# Minimal Kind cluster config referenced by start_env (Chapter 11).
+# The book does not print a complete kind-config.yaml; this is a
+# small three-node layout matching the kind-control-plane / kind-worker
+# / kind-worker2 names used in stop_env.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
