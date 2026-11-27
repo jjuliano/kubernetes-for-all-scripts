@@ -119,9 +119,14 @@ build_router() {
     safe_docker_tag myapplocal/router "registry-service:5000/myapp/router:latest"
     # Kind cannot pull myapplocal/router unless it is loaded (Chapter 11).
     safe_docker_push myapplocal/router
-    kubectl_restart router:myapp
-    helm_install_service router:myapp
-    kubectl_restart router:myapp
+    # setup_k8s installs the router chart later. On a rebuild, upgrade now.
+    if kubectl get deploy router -n myapp >/dev/null 2>&1; then
+      kubectl_restart router:myapp
+      helm_install_service router:myapp
+      kubectl_restart router:myapp
+    else
+      log "Router image loaded; chart will be installed by setup_k8s" "$fg_yellow"
+    fi
   fi
 }
 

@@ -164,13 +164,6 @@ jobs:
             curl -fsS --max-time 5 "http://127.0.0.1:18081/health"
           fi
 
-      - name: Teardown
-        if: always()
-        run: |
-          set -euo pipefail
-          ./datacenter.sh --kind --kind-delete
-          kind get clusters || true
-
       - name: Dump pod logs and events on failure
         if: failure()
         run: |
@@ -195,3 +188,10 @@ jobs:
           echo "===== docker ps ====="
           docker ps -a
           true
+
+      - name: Teardown
+        if: always()
+        run: |
+          set -euo pipefail
+          ./datacenter.sh --kind --kind-delete
+          kind get clusters || true

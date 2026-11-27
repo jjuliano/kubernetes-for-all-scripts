@@ -21,6 +21,7 @@ start_env() {
         "${orig_cwd-}/kind-config.yaml" > "$kind_cfg"
     kind create cluster --config "$kind_cfg"
     rm -f "$kind_cfg"
+    kubectl wait --for=condition=Ready nodes --all --timeout=180s
     log "Kind cluster ready"
   else
     script_exit "Operation not available on datacenter mode!" 2

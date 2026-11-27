@@ -16,7 +16,15 @@ safe_helm() {
 
   check_binary helm && \
     check_directories "${orig_cwd-}/k8s/" && \
-    helm "${@-}"
+    if helm "${@-}"; then
+      return 0
+    else
+      log "Helm command failed; dumping cluster state" "$fg_red"
+      kubectl get pods,deploy,svc -A || true
+      kubectl describe pods -n myapp || true
+      kubectl get events -A --sort-by=.lastTimestamp | tail -50 || true
+      return 1
+    fi
 }
 
 helm_install_service() {
