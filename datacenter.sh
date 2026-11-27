@@ -372,6 +372,11 @@ early_flags() {
         dry_run=true
         skip_runtime_checks=true
         ;;
+      -k|--kind)
+        # Honour --kind before init() so Kind-mode binary checks apply
+        # and get_kube_params does not require a host kubelet / cluster.
+        with_kind=true
+        ;;
     esac
   done
 }

@@ -50,8 +50,13 @@ get_kube_params() {
   log "Kubectl: Getting Kubernetes server IP params ..." "$ta_bold$fg_blue"
 
   if is_kind; then
-    export KUBEAPI_SERVER_IP="$(kubectl get node kind-control-plane \
-      -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+    if kubectl get node kind-control-plane >/dev/null 2>&1; then
+      export KUBEAPI_SERVER_IP="$(kubectl get node kind-control-plane \
+        -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+    else
+      log "Kind cluster is not ready yet; kube params will be refreshed later" "$fg_yellow"
+      return 0
+    fi
   else
     if check_binary ip; then
       export KUBEAPI_SERVER_IP="$(ip -4 addr show eth0 \
@@ -59,7 +64,7 @@ get_kube_params() {
     fi
   fi
 
-  if check_binary kubectl; then
+  if check_binary kubectl && kubectl get sa admin-user -n kube-system >/dev/null 2>&1; then
     export TOKEN="$(kubectl create token admin-user -n kube-system --duration=24h)"
   fi
 }

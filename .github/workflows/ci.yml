@@ -1,0 +1,197 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install helm, kubeconform, and shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          curl -fsSL -o /tmp/kubeconform.tgz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          sudo tar -C /usr/local/bin -xzf /tmp/kubeconform.tgz kubeconform
+
+      - name: bash -n
+        run: |
+          set -euo pipefail
+          for f in datacenter.sh setup.sh lib/*.sh k8s/docker_images.sh \
+                   k8s/bootstrapdb.sh k8s/load_sql.sh scripts/install_deps.sh \
+                   chapter-06-terminal-colors-and-logging/lib/logging.sh; do
+            bash -n "$f"
+          done
+
+      - name: shellcheck
+        run: |
+          shellcheck -s bash datacenter.sh setup.sh lib/*.sh \
+            k8s/docker_images.sh scripts/install_deps.sh \
+            chapter-06-terminal-colors-and-logging/lib/logging.sh
+
+      - name: helm lint
+        run: |
+          set -euo pipefail
+          for chart in k8s/core-service k8s/webapp k8s/traefik \
+                       k8s/development-core-configs k8s/development-backend-configs \
+                       k8s/local-env-volumes; do
+            helm lint "$chart"
+          done
+
+      - name: kubeconform
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/k8s-rendered
+          for vf in k8s/*-values.yaml; do
+            name=$(basename "$vf" -values.yaml)
+            helm template "$name" k8s/core-service --namespace myapp --values "$vf" \
+              --set kubeapi=https://127.0.0.1:6443/ --set kube_token=dummy \
+              > "/tmp/k8s-rendered/${name}.yaml"
+          done
+          helm template webapp k8s/webapp --namespace myapp \
+            --set kubeapi=https://127.0.0.1:6443/ > /tmp/k8s-rendered/webapp.yaml
+          helm template traefik k8s/traefik --namespace kube-system \
+            > /tmp/k8s-rendered/traefik.yaml
+          helm template core-configs k8s/development-core-configs --namespace myapp \
+            --set map.token=dummy --set map.k8s_api_url=https://127.0.0.1:6443/ \
+            --set map.guardian_url=http://127.0.0.1:32001/ \
+            --set map.kafka_brokers=127.0.0.1:19092 \
+            > /tmp/k8s-rendered/core-configs.yaml
+          helm template backend-configs k8s/development-backend-configs --namespace myapp \
+            --set map.token=dummy --set map.k8s_api_url=https://127.0.0.1:6443/ \
+            > /tmp/k8s-rendered/backend-configs.yaml
+          helm template local-env-volumes k8s/local-env-volumes --namespace myapp \
+            > /tmp/k8s-rendered/local-env-volumes.yaml
+          kubeconform -strict -summary \
+            k8s/myapp-namespace.yaml \
+            k8s/registry.yaml \
+            k8s/postgres.yaml \
+            k8s/db-auth.yaml \
+            k8s/service-account.yaml \
+            k8s/namespace-services.yaml \
+            k8s/disks/local-volume.yaml \
+            k8s/disks/local-volume-claim.yaml \
+            /tmp/k8s-rendered/*.yaml
+          kubeconform -strict -ignore-missing-schemas -summary \
+            k8s/myapp-servicemonitor.yaml \
+            k8s/servicemonitor.yaml \
+            k8s/otel-collector.yaml \
+            k8s/otel-instrumentation.yaml
+
+  kind:
+    name: kind-install
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install kind, kubectl, and helm
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/kubectl \
+            "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install /tmp/kubectl /usr/local/bin/kubectl
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          curl -fsSL -o /tmp/kind \
+            "https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64"
+          sudo install /tmp/kind /usr/local/bin/kind
+          kubectl version --client
+          helm version
+          kind version
+          docker version
+
+      - name: Configure and install
+        run: |
+          set -euo pipefail
+          cp configuration.example configuration
+          chmod +x datacenter.sh setup.sh
+          ./datacenter.sh --kind --install
+
+      - name: Wait for workloads and curl /health
+        run: |
+          set -euo pipefail
+          kubectl wait --for=condition=Ready pods --all -n myapp --timeout=300s
+          kubectl wait --for=condition=Available deploy --all -n myapp --timeout=300s
+          kubectl wait --for=condition=Available deploy/traefik -n kube-system --timeout=180s
+          kubectl get pods -n myapp -o wide
+          # guardian NodePort 32001 is mapped in kind-config.yaml
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 5 "http://127.0.0.1:32001/health"; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "guardian /health did not respond on localhost:32001; trying port-forward"
+          kubectl -n myapp port-forward svc/guardian 18080:8080 >/tmp/pf-guardian.log 2>&1 &
+          pf=$!
+          trap 'kill "$pf" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS --max-time 5 "http://127.0.0.1:18080/health"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "health check failed"
+          exit 1
+
+      - name: Reload conductor and re-check health
+        run: |
+          set -euo pipefail
+          ./datacenter.sh --kind -rc=conductor
+          kubectl rollout status deploy/conductor -n myapp --timeout=180s
+          kubectl wait --for=condition=Ready pods --all -n myapp --timeout=180s
+          if ! curl -fsS --max-time 5 "http://127.0.0.1:32001/health"; then
+            kubectl -n myapp port-forward svc/guardian 18081:8080 >/tmp/pf-guardian2.log 2>&1 &
+            pf=$!
+            trap 'kill "$pf" 2>/dev/null || true' EXIT
+            sleep 2
+            curl -fsS --max-time 5 "http://127.0.0.1:18081/health"
+          fi
+
+      - name: Teardown
+        if: always()
+        run: |
+          set -euo pipefail
+          ./datacenter.sh --kind --kind-delete
+          kind get clusters || true
+
+      - name: Dump pod logs and events on failure
+        if: failure()
+        run: |
+          set +e
+          echo "===== kubectl get pods -A ====="
+          kubectl get pods -A -o wide
+          echo "===== kubectl get pvc,pv,sc ====="
+          kubectl get sc,pv,pvc -A
+          echo "===== kubectl get deploy,svc -n myapp ====="
+          kubectl get deploy,svc,ingress -n myapp -o wide
+          echo "===== events ====="
+          kubectl get events -A --sort-by=.lastTimestamp | tail -80
+          echo "===== describe pods in myapp ====="
+          kubectl describe pods -n myapp
+          echo "===== logs ====="
+          for ns in myapp kube-system; do
+            kubectl get pods -n "$ns" --no-headers 2>/dev/null | awk '{print $1}' | while read -r pod; do
+              echo "----- $ns/$pod -----"
+              kubectl logs -n "$ns" "$pod" --all-containers --tail=80
+            done
+          done
+          echo "===== docker ps ====="
+          docker ps -a
+          true

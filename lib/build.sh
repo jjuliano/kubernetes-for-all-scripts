@@ -142,8 +142,6 @@ build_bff() {
   log "Docker: Building BFF ..." "$ta_bold$fg_blue"
 
   check_directories "$(get_repos_dir)/webapp/" && \
-    safe_docker_run "node:${NODE_VERSION-}" /bin/sh -c \
-      "cd /webapp && npm install && npm run build && \
-       sed -i \"s/API_URL_PLACEHOLDER/http:\/\/${KUBEAPI_SERVER_IP-}/g\"
-         dist/config.js"
+    safe_docker_run "node:${NODE_VERSION:-20}" /bin/sh -c \
+      "cd /webapp && npm install && npm run build && sed -i \"s/API_URL_PLACEHOLDER/http:\/\/${KUBEAPI_SERVER_IP-}/g\" dist/config.js"
 }

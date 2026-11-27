@@ -1,5 +1,7 @@
 # Kubernetes for All — companion scripts
 
+[![CI](https://github.com/jjuliano/kubernetes-for-all-scripts/actions/workflows/ci.yml/badge.svg)](https://github.com/jjuliano/kubernetes-for-all-scripts/actions/workflows/ci.yml)
+
 Companion scripts for [*Kubernetes for All*](https://leanpub.com/k8s4all) by Joel Bryan Juliano.
 
 Book: [https://leanpub.com/k8s4all](https://leanpub.com/k8s4all)

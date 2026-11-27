@@ -105,9 +105,15 @@ docker_compose_up() {
   fi
 
   local status=""
+  local waited=0
+  local timeout="${COMPOSE_UP_TIMEOUT:-180}"
   while [[ "${status-}" -ne $expected ]]; do
+    if (( waited >= timeout )); then
+      script_exit "Docker Compose: timed out waiting for ${expected} external_ containers" 1
+    fi
     status=$(docker ps | grep -i external_ | wc -l)
     sleep 1
+    waited=$((waited + 1))
   done
 
   log "Docker Compose: start up of docker machines complete ..."
@@ -125,10 +131,16 @@ docker_compose_down() {
     return 0
   fi
 
-  local status=""
+  local status="1"
+  local waited=0
+  local timeout="${COMPOSE_DOWN_TIMEOUT:-120}"
   while [[ "${status-}" -ne 0 ]]; do
+    if (( waited >= timeout )); then
+      script_exit "Docker Compose: timed out waiting for external_ containers to stop" 1
+    fi
     status=$(docker ps | grep -i external_ | wc -l)
     sleep 1
+    waited=$((waited + 1))
   done
 
   log "Docker Compose: shutdown of docker machines complete ..."

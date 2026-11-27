@@ -9,7 +9,7 @@ install_deps() {
     script_exit "Missing required argument to install_deps()!" 2
   fi
 
-  safe_docker_run "golang:${GO_VERSION-}" /install_deps.sh "${@-}"
+  safe_docker_run "golang:${GO_VERSION:-1.22}" /install_deps.sh "${@-}"
 }
 
 # Not printed as a complete function in the book. Ch18 says install_deps_init
